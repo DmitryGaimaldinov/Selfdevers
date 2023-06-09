@@ -5,15 +5,24 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { PostsModule } from './posts/posts.module';
+import { NotesModule } from './notes/notes.module';
 import { FollowingsModule } from './followings/followings.module';
-import { IsValidUserTagConstraint } from "./decorators/validate-tag.decorator";
+import { MulterModule } from "@nestjs/platform-express";
+import { diskStorage, memoryStorage } from "multer";
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { PhotosModule } from './photos/photos.module';
+import { JwtModule } from "@nestjs/jwt";
+import { jwtConstants } from "./auth/constants";
+import { CoreModule } from "./core.module";
+import { NotificationsModule } from './notifications/notifications.module';
+import { EventEmitterModule } from "@nestjs/event-emitter";
 
 @Module({
   imports: [
     UsersModule,
     AuthModule,
-    PostsModule,
+    NotesModule,
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: '../db',
@@ -26,8 +35,19 @@ import { IsValidUserTagConstraint } from "./decorators/validate-tag.decorator";
       isGlobal: true,
     }),
     FollowingsModule,
+    MulterModule.register({
+      dest: './files',
+      storage: memoryStorage(),
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'files'),
+    }),
+    PhotosModule,
+    CoreModule,
+    NotificationsModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService, IsValidUserTagConstraint,],
+  providers: [AppService],
 })
 export class AppModule {}

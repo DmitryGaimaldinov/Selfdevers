@@ -1,14 +1,8 @@
-import { Expose } from "class-transformer";
+import { UserDto } from "../../users/dto/user.dto";
 
 export class AuthResultDto {
 
-  id: number;
-
-  name: string;
-
-  email: string;
-
-  userTag: string;
+  user: UserDto;
 
   accessToken: string;
 

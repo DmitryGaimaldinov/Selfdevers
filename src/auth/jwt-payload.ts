@@ -1,3 +1,3 @@
 export class JwtPayload {
-  constructor(public sub: number, public email: string) {}
+  constructor(public sub: number) {}
 }

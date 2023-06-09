@@ -16,9 +16,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   // Сверяет, правильный ли email и пароль.
   // То, что возвращается в return, добавляется к Request'у как поле user.
   async validate(email: string, password: string): Promise<any> {
-    console.log(`email: ${email}, password: ${password}`);
     const user = await this.authService.validateUserLocal(email, password);
-    console.log(`user in validation: ${JSON.stringify(user)}`);
     return user;
   }
 }
