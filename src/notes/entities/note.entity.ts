@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { User } from "../../users/entities/user.entity";
 import { ImageEntity } from "../../photos/enitities/image.entity";
+import { LikeEntity } from "../../likes/entities/like.entity";
 
 @Entity()
 export class Note {
@@ -33,10 +34,6 @@ export class Note {
 
   @Column({ nullable: true })
   parentId: number;
-
-  @ManyToMany(() => User)
-  @JoinTable()
-  repostedUsers: User[];
 
   @Column({ nullable: true })
   quotedNoteId: number;

@@ -5,22 +5,28 @@ export class NoteDto {
   constructor(id: number,
               text: string,
               images: ImageDto[],
-              isRepostedOrQuoted: boolean,
-              canBeReposted: boolean,
+              isQuoted: boolean,
               isEdited: boolean,
               creator: UserDto,
               creationDate: Date,
               isMyNote: boolean,
+              likeCount: number,
+              isLikedByMe: boolean,
+              quoteCount: number,
+              quotedNoteDto: NoteDto | null,
   ) {
     this.id = id;
     this.text = text;
     this.images = images;
-    this.isRepostedOrQuoted = isRepostedOrQuoted;
-    this.canBeReposted = canBeReposted;
+    this.isQuoted = isQuoted;
     this.isEdited = isEdited;
     this.creator = creator;
     this.creationDate = creationDate;
     this.isMyNote = isMyNote;
+    this.likeCount = likeCount;
+    this.isLikedByMe = isLikedByMe;
+    this.quoteCount = quoteCount;
+    this.quotedNoteDto = quotedNoteDto;
   }
 
   id: number;
@@ -29,9 +35,7 @@ export class NoteDto {
 
   images: ImageDto[];
 
-  isRepostedOrQuoted: boolean;
-
-  canBeReposted: boolean;
+  isQuoted: boolean;
 
   isEdited: boolean;
 
@@ -40,4 +44,12 @@ export class NoteDto {
   creationDate: Date;
 
   isMyNote: boolean;
+
+  likeCount: number;
+
+  isLikedByMe: boolean;
+
+  quoteCount: number;
+
+  quotedNoteDto: NoteDto | null;
 }

@@ -17,6 +17,7 @@ import { jwtConstants } from "./auth/constants";
 import { CoreModule } from "./core.module";
 import { NotificationsModule } from './notifications/notifications.module';
 import { EventEmitterModule } from "@nestjs/event-emitter";
+import { LikesModule } from './likes/likes.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
     CoreModule,
     NotificationsModule,
     EventEmitterModule.forRoot(),
+    LikesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

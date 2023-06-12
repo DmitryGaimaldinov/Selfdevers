@@ -14,22 +14,22 @@ export let serverUrl: string;
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  const config = new DocumentBuilder()
-    .setTitle('Selfdevers')
-    .setDescription('The selfdevers api description')
-    .setVersion('1.0')
-    .addTag('selfdevers')
-    .build();
+  // const config = new DocumentBuilder()
+  //   .setTitle('Selfdevers')
+  //   .setDescription('The selfdevers api description')
+  //   .setVersion('1.0')
+  //   .addTag('selfdevers')
+  //   .build();
+  //
+  // const swaggerOptions: SwaggerDocumentOptions =  {
+  //   operationIdFactory: (
+  //     controllerKey: string,
+  //     methodKey: string
+  //   ) => methodKey
+  // };
 
-  const swaggerOptions: SwaggerDocumentOptions =  {
-    operationIdFactory: (
-      controllerKey: string,
-      methodKey: string
-    ) => methodKey
-  };
-
-  const document = SwaggerModule.createDocument(app, config, swaggerOptions);
-  SwaggerModule.setup('api', app, document);
+  // const document = SwaggerModule.createDocument(app, config, swaggerOptions);
+  // SwaggerModule.setup('api', app, document);
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
