@@ -8,6 +8,7 @@ import { TransformUserTagPipe } from "./users/transform-user-tag-pipe";
 import { join } from 'path';
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from "@nestjs/swagger";
+import * as fs from "fs";
 
 export let serverUrl: string;
 
@@ -33,6 +34,15 @@ async function bootstrap() {
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
+  const filesDir = join(__dirname, '..', 'files');
+  if (!fs.existsSync(filesDir)){
+    fs.mkdirSync(filesDir);
+  }
+  const filesProfileDir = join(__dirname, '..', 'files/profile')
+  if (!fs.existsSync(filesProfileDir)){
+    fs.mkdirSync(filesProfileDir);
+  }
+
   app.useGlobalPipes(
     new TransformUserTagPipe(),
     new TrimPipe(),
@@ -46,7 +56,9 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpErrorFilter());
   app.useStaticAssets(join(__dirname, '..', 'files/profile'));
-  await app.listen(3000, '194.58.107.53');
+
+  await app.listen(3000, 'localhost');
+  // await app.listen(3000, '194.58.107.53');
   serverUrl = await app.getUrl();
 
   console.log(await app.getUrl());
