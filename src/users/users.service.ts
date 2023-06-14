@@ -14,6 +14,7 @@ import { FollowStateDto } from "../followings/dto/follow-state.dto";
 import { EntityNotFoundError } from "../errors/entity-not-found.error";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { FollowEvent } from "../followings/events/follow.event";
+import { ImageEntity } from "../photos/enitities/image.entity";
 
 type FindUserType = Partial<Omit<User, 'notes' | 'repostedNotes'>>;
 
@@ -58,7 +59,13 @@ export class UsersService {
   }
 
   async findOneBy(by: FindUserType, finderId: number | null): Promise<UserDto | null> {
-    const user = await this.userRepo.findOneBy(by);
+    const user = await this.userRepo.findOne({
+      where: by,
+      relations: {
+        avatar: true,
+        background: true,
+      }
+    });
 
     if (!user) {
       return null;
@@ -136,8 +143,9 @@ export class UsersService {
     const notesCount = await this.notesRepo.count({
       where: {
         creator: {
-          id: userId
-        }
+          id: userId,
+        },
+        parentId: null,
       }
     })
 
@@ -148,42 +156,39 @@ export class UsersService {
     };
   }
 
-  // TODO: Сделать класс Paginated<>
-  // async getFollowers(userId: number, beforeDate: Date) {
-  //   const takeCount = 30;
-  //
-  //   let beforeDateCondition: FindOperator<Date> = undefined;
-  //   if (beforeDate) {
-  //     beforeDateCondition = LessThan(beforeDate);
-  //   }
-  //
-  //   const followings = await this.followingRepo.find({
-  //     where: {
-  //       followedId: userId,
-  //       date: beforeDateCondition,
-  //     },
-  //     order: {
-  //       date: "DESC",
-  //     },
-  //     take: takeCount,
-  //   });
-  //
-  //   const followers = await Promise.all(followings.map(async (following) => {
-  //     return await this.findOneBy({ id: following.followerId })
-  //   }));
-  //
-  //   if (followings.length < takeCount) {
-  //     return {
-  //       followers,
-  //     }
-  //   }
-  //
-  //   const oldestFollowing = followings[followings.length - 1];
-  //   return {
-  //     followers,
-  //     'beforeDate': oldestFollowing.date,
-  //   }
-  // }
+  async getFollowers(userId: number, finderId: number | null): Promise<UserDto[]> {
+    const followings = await this.followingRepo.find({
+      where: {
+        followedId: userId,
+      },
+      order: {
+        date: "DESC",
+      },
+    });
+
+    const followers = await Promise.all(followings.map(async (following) => {
+      return await this.findOneBy({ id: following.followerId }, finderId)
+    }));
+
+    return followers;
+  }
+
+  async getFollowings(userId: number, finderId: number | null): Promise<UserDto[]> {
+    const followings = await this.followingRepo.find({
+      where: {
+        followerId: userId,
+      },
+      order: {
+        date: "DESC",
+      },
+    });
+
+    const followingUsers = await Promise.all(followings.map(async (following) => {
+      return await this.findOneBy({ id: following.followedId }, finderId)
+    }));
+
+    return followingUsers;
+  }
 
   // async getFollowedUsers(userId: number, beforeDate: Date) {
   //   const takeCount = 30;
@@ -312,48 +317,41 @@ export class UsersService {
   //   await this.userRepo.update({ id: userId }, { description: description.trim() });
   // }
 
-  // async updateAvatar(userId: number, avatar?: Express.Multer.File): Promise<ImageDto | null> {
-  //   let image: ImageEntity = null;
-  //   if (avatar) {
-  //     image = await this.photosService.saveImage(avatar, { width: 1080, height: 1080 });
-  //   }
-  //
-  //   const user = await this.findOneBy({ id: userId });
-  //   user.avatar = image;
-  //   await this.userRepo.save(user);
-  //
-  //   return {
-  //     url: this.photosService.getUrlFromFilename(image.filename),
-  //     blurhash: image.blurhash,
-  //   };
-  // }
+  async updateAvatar(userId: number, avatar?: Express.Multer.File): Promise<ImageDto | null> {
+    let image: ImageEntity = null;
+    if (avatar) {
+      image = await this.photosService.saveImage(avatar, { width: 1080, height: 1080 });
+    }
 
-  // async updateBackground(userId: number, background?: Express.Multer.File): Promise<ImageDto | null> {
-  //   let image: ImageEntity = null;
-  //   if (background) {
-  //     image = await this.photosService.saveImage(background, { width: 1080, height: 1080 });
-  //   }
-  //
-  //   const user = await this.findOneBy({ id: userId });
-  //   user.background = image;
-  //   await this.userRepo.save(user);
-  //
-  //   return {
-  //     url: this.photosService.getUrlFromFilename(image.filename),
-  //     blurhash: image.blurhash,
-  //   };
-  // }
+    const user = await this.userRepo.findOneBy({ id: userId });
+    user.avatar = image;
+    await this.userRepo.save(user);
 
-  // async update(userId: number, userFields: Partial<User>): Promise<User> {
-  //
-  //   мб нужен будет throwIfTagNotUnique
-  //
-  //   await this.userRepo.update({ id: userId }, {
-  //     ...userFields
-  //   });
+    return this.photosService.convertImageEntityToDto(image);
+  }
 
-  //   return await this.findOneBy({ id: userId });
-  // }
+  async updateBackground(userId: number, background?: Express.Multer.File): Promise<ImageDto | null> {
+    let image: ImageEntity = null;
+    if (background) {
+      image = await this.photosService.saveImage(background, { width: 1080, height: 432 });
+    }
+
+    let user: User = await this.userRepo.findOneBy({ id: userId });
+    user.background = image;
+    user = await this.userRepo.save(user);
+
+    console.log(`user background: ${user.background}`);
+
+    return this.photosService.convertImageEntityToDto(image);
+  }
+
+  async update(userId: number, userFields: Partial<User>): Promise<UserDto> {
+    await this.userRepo.update({ id: userId }, {
+      ...userFields
+    });
+
+    return await this.findOneBy({ id: userId }, userId);
+  }
 
   // async changePrivacy(userId: number, isPrivate: boolean): Promise<boolean> {
   //   await this.userRepo.update({ id: userId }, { isPrivate });

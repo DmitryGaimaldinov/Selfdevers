@@ -56,10 +56,10 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpErrorFilter());
   app.useStaticAssets(join(__dirname, '..', 'files/profile'));
-  app.useStaticAssets(join(__dirname, '..', 'files/'))
+  app.useStaticAssets(join(__dirname, '..', 'files/web'))
 
-  // await app.listen(3000, 'localhost');
-  await app.listen(3000, '194.58.107.53');
+  await app.listen(3000, 'localhost');
+  // await app.listen(3000, '194.58.107.53');
   serverUrl = await app.getUrl();
 
   console.log(await app.getUrl());

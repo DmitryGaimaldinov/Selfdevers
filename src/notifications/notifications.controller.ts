@@ -19,6 +19,13 @@ export class NotificationsController {
     };
   }
 
+  @Post('mark-as-viewed')
+  @UseGuards(JwtAuthGuard)
+  async markViewed(@CurrentUser() currUser: User) {
+    await this.notificationsService.markAsViewed(currUser.id);
+  }
+
+  // TODO: Удалить
   @Get('get-all-notifications')
   async getAllNotifications() {
     return await this.notificationsService.getAllNotifications();

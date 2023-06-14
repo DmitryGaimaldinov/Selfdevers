@@ -27,6 +27,8 @@ import { User } from "./entities/user.entity";
 import { UsersService } from "./users.service";
 import { FollowDto } from "../followings/dto/follow.dto";
 import { ApplyUserGuard } from "../auth/guards/apply-user.guard";
+import { GetFollowersResultDto } from "./dto/get-followers-result.dto";
+import { GetFollowingsResultDto } from "./dto/get-followings-result.dto";
 
 @Controller('users')
 export class UsersController {
@@ -79,83 +81,63 @@ export class UsersController {
     return await this.usersService.unfollow(user, followDto.userId);
   }
 
+  @Post('update-profile')
+  @UseGuards(JwtAuthGuard, UserTagGuard)
+  async updateProfile(@CurrentUser() currentUser: UserDto, @Body() updateProfileDto: UpdateProfileDto): Promise<UserDto> {
+    return this.usersService.update(currentUser.id, { ...updateProfileDto });
+  }
 
+  @Post('get-followers')
+  @UseGuards(ApplyUserGuard)
+  async getFollowers(@CurrentUser() currUser: UserDto | null, @Body() getFollowersDto: GetFollowersDto): Promise<GetFollowersResultDto> {
+    return {
+      followers: await this.usersService.getFollowers(getFollowersDto.userId, currUser?.id)
+    };
+  }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Post('change')
-  // async change(@CurrentUser() currentUser: User, @Body() changeUserDto: ChangeUserDto) {
-  //   return this.usersService.update(currentUser.id, changeUserDto);
-  // }
+  @Post('get-followings')
+  @UseGuards(ApplyUserGuard)
+  async getFollowings(@CurrentUser() currUser: UserDto | null, @Body() getFollowingsDto: GetFollowingsDto): Promise<GetFollowingsResultDto> {
+    return {
+      followings: await this.usersService.getFollowings(getFollowingsDto.userId, currUser?.id)
+    };
+  }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Post('change-privacy')
-  // async changePrivacy(@CurrentUser() currentUser: User, @Body() changePrivacyDto: ChangePrivacyDto) {
-  //   return this.usersService.changePrivacy(currentUser.id, changePrivacyDto.isPrivate);
-  // }
+  @Post('update-avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor(
+    'file',
+    { fileFilter: imageFileFilter }
+  ))
+  async updateAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() currUser: UserDto,
+  ): Promise<ImageDto | null> {
+    return await this.usersService.updateAvatar(currUser.id, file);
+  }
 
-  // @Post('update-profile')
-  // @UseGuards(JwtAuthGuard, UserTagGuard)
-  // async updateProfile(@CurrentUser() currentUser: UserDto, @Body() updateProfileDto: UpdateProfileDto) {
-  //   return this.usersService.update(currentUser.id, { ...updateProfileDto });
-  // }
-  //
-  // @UseGuards(JwtAuthGuard)
-  // @Post('get-followers')
-  // async getFollowers(@CurrentUser() currUser: UserDto, @Body() getFollowersDto: GetFollowersDto) {
-  //   const hasAccess = await this.usersService.getHasAccessToUserState(currUser.id, getFollowersDto.userId);
-  //   if (hasAccess != HasAccessToUserState.hasAccess) {
-  //     throw new MethodNotAllowedException('Доступ к данным пользователя запрещён');
-  //   }
-  //
-  //   return await this.usersService.getFollowers(getFollowersDto.userId, getFollowersDto.beforeDate);
-  // }
-  //
-  // @UseGuards(JwtAuthGuard)
-  // @Post('get-followings')
-  // async getFollowings(@CurrentUser() currUser: UserDto, @Body() getFollowingsDto: GetFollowingsDto) {
-  //   const hasAccess = await this.usersService.getHasAccessToUserState(currUser.id, getFollowingsDto.userId);
-  //   if (hasAccess != HasAccessToUserState.hasAccess) {
-  //     throw new MethodNotAllowedException('Доступ к данным пользователя запрещён');
-  //   }
-  //
-  //   return await this.usersService.getFollowedUsers(getFollowingsDto.userId, getFollowingsDto.beforeDate);
-  // }
-  //
-  // @Post('update-avatar')
-  // @UseGuards(JwtAuthGuard)
-  // @UseInterceptors(FileInterceptor(
-  //   'file',
-  //   { fileFilter: imageFileFilter }
-  // ))
-  // async updateAvatar(
-  //   @UploadedFile() file: Express.Multer.File,
-  //   @CurrentUser() currUser: UserDto,
-  // ): Promise<ImageDto | null> {
-  //   return await this.usersService.updateAvatar(currUser.id, file);
-  // }
-  //
-  // @Post('update-background')
-  // @UseGuards(JwtAuthGuard)
-  // @UseInterceptors(FileInterceptor(
-  //   'file',
-  //   { fileFilter: imageFileFilter }
-  // ))
-  // async updateBackground(
-  //   @UploadedFile() file: Express.Multer.File,
-  //   @CurrentUser() currUser: UserDto,
-  // ): Promise<ImageDto | null> {
-  //   return await this.usersService.updateBackground(currUser.id, file);
-  // }
-  //
-  // @Post('remove-avatar')
-  // @UseGuards(JwtAuthGuard)
-  // async removeAvatar(@CurrentUser() currUser: UserDto) {
-  //   await this.usersService.updateAvatar(currUser.id, null);
-  // }
-  //
-  // @Post('remove-background')
-  // @UseGuards(JwtAuthGuard)
-  // async removeBackground(@CurrentUser() currUser: UserDto) {
-  //   await this.usersService.updateBackground(currUser.id, null);
-  // }
+  @Post('update-background')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor(
+    'file',
+    { fileFilter: imageFileFilter }
+  ))
+  async updateBackground(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() currUser: UserDto,
+  ): Promise<ImageDto | null> {
+    return await this.usersService.updateBackground(currUser.id, file);
+  }
+
+  @Post('remove-avatar')
+  @UseGuards(JwtAuthGuard)
+  async removeAvatar(@CurrentUser() currUser: UserDto) {
+    await this.usersService.updateAvatar(currUser.id, null);
+  }
+
+  @Post('remove-background')
+  @UseGuards(JwtAuthGuard)
+  async removeBackground(@CurrentUser() currUser: UserDto) {
+    await this.usersService.updateBackground(currUser.id, null);
+  }
 }

@@ -14,6 +14,7 @@ export class NoteDto {
               isLikedByMe: boolean,
               quoteCount: number,
               quotedNoteDto: NoteDto | null,
+              commentCount: number,
   ) {
     this.id = id;
     this.text = text;
@@ -27,6 +28,7 @@ export class NoteDto {
     this.isLikedByMe = isLikedByMe;
     this.quoteCount = quoteCount;
     this.quotedNoteDto = quotedNoteDto;
+    this.commentCount = commentCount;
   }
 
   id: number;
@@ -52,4 +54,6 @@ export class NoteDto {
   quoteCount: number;
 
   quotedNoteDto: NoteDto | null;
+
+  commentCount: number;
 }

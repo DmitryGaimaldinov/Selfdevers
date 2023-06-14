@@ -46,32 +46,24 @@ export class NotificationsService {
   async getUnreadNotificationsCount(userId: number): Promise<number> {
     const lastViewDate: Date | null = await this.getLastViewDate(userId);
 
-    return await this.notificationsRepo.count({
-      where: {
-        recipients: {
-          id: userId,
-        }
-      },
-      relations: {
-        recipients: true,
-      }
-    });
-
     if (lastViewDate) {
       return await this.notificationsRepo.count({
         where: {
-          recipients: ArrayContains([ { userId }]),
+          recipients: { id: userId },
           creationDate: MoreThan(lastViewDate),
         },
         relations: {
-          recipients: true
-        }
+          recipients: true,
+        },
       });
     } else {
       return await this.notificationsRepo.count({
         where: {
-          recipients: ArrayContains([userId]),
+          recipients: { id: userId }
         },
+        relations: {
+          recipients: true,
+        }
       });
     }
   }
@@ -99,9 +91,10 @@ export class NotificationsService {
   async getNotifications(userId: number): Promise<NotificationDto[]> {
     const notifications: NotificationEntity[] = await this.notificationsRepo.find({
       where: {
-        recipients: {
-          id: userId,
-        }
+        recipients: { id: userId },
+      },
+      order: {
+        creationDate: 'desc'
       }
     });
 
@@ -121,9 +114,19 @@ export class NotificationsService {
     return null;
   }
 
-  // async markAsViewed() {
-  //
-  // }
+  async markAsViewed(userId: number) {
+    const reading = await this.notificationsReadingRepo.findOneBy({ userId });
+    if (reading) {
+      await this.notificationsReadingRepo.update({ userId }, {});
+    } else {
+      const newReading = this.notificationsReadingRepo.create({userId});
+      await this.notificationsReadingRepo.save(newReading);
+    }
+
+    console.log(`date after mark as viewed: ${await this.getLastViewDate(userId)}`);
+
+    this.eventEmitter.emit(NotificationsChangedEvent.eventName, new NotificationsChangedEvent({userId}));
+  }
 
   // TODO: Удалить позже
   async getAllNotifications() {

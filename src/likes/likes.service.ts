@@ -18,7 +18,7 @@ export class LikesService {
   }
 
   async deleteLikeNote({ userId, noteId } : { userId: number, noteId: number }): Promise<void> {
-    const like = await this.likesRepo.findOneBy({ userId: userId, noteId });
+    const like = await this.likesRepo.findOneBy({ userId, noteId });
     if (like) {
       await this.likesRepo.remove(like);
     }
@@ -29,6 +29,9 @@ export class LikesService {
   }
 
   async isNoteLikedByUser({ userId, noteId } : { userId: number, noteId: number }) {
-    return await this.likesRepo.exist({ where: { userId: userId, noteId } });
+    if (!userId) {
+      return false;
+    }
+    return await this.likesRepo.exist({ where: { userId, noteId } });
   }
 }

@@ -1,10 +1,7 @@
 import { IsDate, IsNumber, IsOptional } from "class-validator";
+import { IsUserId } from "../decorators/is-user-id.decorator";
 
 export class GetFollowersDto {
-  @IsNumber()
+  @IsUserId()
   userId: number;
-
-  @IsOptional()
-  @IsDate()
-  beforeDate: Date;
 }

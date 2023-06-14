@@ -19,6 +19,10 @@ import { ApplyUserGuard } from "../auth/guards/apply-user.guard";
 import { User } from "../users/entities/user.entity";
 import { GetUserNotesDto } from "./dto/get-user-notes.dto";
 import { NoteDto } from "./dto/note.dto";
+import { GetNoteByIdDto } from "./dto/get-note-by-id.dto";
+import { GetUserNotesResultDto } from "./dto/get-user-notes-result.dto";
+import { GetCommentsDto } from "./dto/get-comments.dto";
+import { GetCommentsResultDto } from "./dto/get-comments-result.dto";
 
 @ApiTags('notes')
 @Controller('notes')
@@ -40,7 +44,7 @@ export class NotesController {
   async createNote(
     @CurrentUser() currUser,
     @Body() createNoteDto: CreateNoteDto,
-  ): Promise<number> {
+  ): Promise<NoteDto> {
     if (createNoteDto.text.length == 0 && createNoteDto.imageIds.length == 0) {
       throw new UnprocessableEntityException('Нельзя опубликовать пустой пост');
     }
@@ -61,7 +65,23 @@ export class NotesController {
 
   @Post('get-user-notes')
   @UseGuards(ApplyUserGuard)
-  async getUserNotes(@CurrentUser() currUser: User | null, @Body() dto: GetUserNotesDto): Promise<NoteDto[]> {
-    return await this.notesService.getUserNotes(dto.userId);
+  async getUserNotes(@CurrentUser() currUser: User | null, @Body() dto: GetUserNotesDto): Promise<GetUserNotesResultDto> {
+    return {
+      notes: await this.notesService.getUserNotes(dto.userTag, currUser?.id)
+    };
+  }
+
+  @Post('get-note-by-id')
+  @UseGuards(ApplyUserGuard)
+  async getNoteById(@CurrentUser() currUser: User | null, @Body() dto: GetNoteByIdDto): Promise<NoteDto> {
+    return await this.notesService.findById({ id: dto.noteId, finderId: currUser?.id });
+  }
+
+  @Post('get-comments')
+  @UseGuards(ApplyUserGuard)
+  async getComments(@CurrentUser() currUser: User | null, @Body() dto: GetCommentsDto): Promise<GetCommentsResultDto> {
+    return {
+      comments: await this.notesService.getComments(dto.noteId, currUser?.id)
+    };
   }
 }

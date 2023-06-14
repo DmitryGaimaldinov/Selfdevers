@@ -85,6 +85,8 @@ export class NotesService {
       quotedNoteDto = await this.findById({ id: note.quotedNoteId, finderId: relatedToUserId })
     }
 
+    const commentCount = await this.getCommentCount(note.id);
+
     return new NoteDto(
       note.id,
       note.text,
@@ -97,12 +99,13 @@ export class NotesService {
       likeCount,
       isLikedByMe,
       quoteCount,
-      quotedNoteDto
+      quotedNoteDto,
+      commentCount,
     );
   }
 
-  /// @Returns the id of created note
-  async createNote({creator, createNoteDto}: { creator: User, createNoteDto: CreateNoteDto }): Promise<number> {
+  /// @Returns created note
+  async createNote({creator, createNoteDto}: { creator: User, createNoteDto: CreateNoteDto }): Promise<NoteDto> {
     let imageEntities: ImageEntity[] = [];
     if (createNoteDto.imageIds) {
       imageEntities = await Promise.all(createNoteDto.imageIds.map((id) => {
@@ -119,7 +122,7 @@ export class NotesService {
     });
 
     note = await this.noteRepository.save(note);
-    return note.id;
+    return await this.convertEntityToDto(note, creator.id);
   }
 
   async getFeedPeople(userId: number): Promise<NoteDto[]> {
@@ -140,12 +143,10 @@ export class NotesService {
 
     // Теперь нужно искать посты людей, на которых человек подписан
     const notes = await this.noteRepository.find({
-      where: [
-        {
-          creator: findCreatorWhere,
-          parentId: IsNull(),
-        },
-      ],
+      where: {
+        creator: findCreatorWhere,
+        parentId: IsNull(),
+      },
       order: {
         creationDate: "DESC",
       }
@@ -154,14 +155,30 @@ export class NotesService {
     return await this.convertEntitiesToDtos(notes, userId);
   }
 
-  async getUserNotes(userId: number): Promise<NoteDto[]> {
+  async getUserNotes(userTag: string, finderId: number | null): Promise<NoteDto[]> {
     const notes: Note[] = await this.noteRepository.find({
       where: {
-        creator: { id: userId },
+        creator: { userTag },
         parentId: null,
       },
     });
 
-    return await this.convertEntitiesToDtos(notes, userId);
+    return await this.convertEntitiesToDtos(notes, finderId);
+  }
+
+  async getComments(noteId: number, finderId: number | null): Promise<NoteDto[]> {
+    const notes: Note[] = await this.noteRepository.find({
+      where: {
+        parentId: noteId,
+      }
+    });
+
+    return await this.convertEntitiesToDtos(notes, finderId);
+  }
+
+  private async getCommentCount(noteId: number): Promise<number> {
+    return await this.noteRepository.count({
+      where: { parentId: noteId },
+    });
   }
 }
