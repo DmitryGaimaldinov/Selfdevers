@@ -1,6 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { Note } from "./entities/note.entity";
-import { ArrayContains, FindOperator, FindOptionsWhere, In, IsNull, Repository } from "typeorm";
+import {
+  ArrayContains,
+  FindOperator,
+  FindOptionsWhere,
+  ILike,
+  In,
+  IsNull,
+  Like,
+  QueryBuilder,
+  Repository
+} from "typeorm";
 import { CreateNoteDto } from "./dto/create-note.dto";
 import { User } from "../users/entities/user.entity";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -12,6 +22,7 @@ import { UsersService } from "../users/users.service";
 import { UserDto } from "../users/dto/user.dto";
 import { Following, FollowState } from "../followings/entities/following.entity";
 import { LikesService } from "../likes/likes.service";
+import { LikeEntity } from "../likes/entities/like.entity";
 
 @Injectable()
 export class NotesService {
@@ -161,6 +172,9 @@ export class NotesService {
         creator: { userTag },
         parentId: null,
       },
+      order: {
+        creationDate: 'DESC',
+      }
     });
 
     return await this.convertEntitiesToDtos(notes, finderId);
@@ -180,5 +194,56 @@ export class NotesService {
     return await this.noteRepository.count({
       where: { parentId: noteId },
     });
+  }
+
+  async getLatestNotes({ searchString, finderId }: { searchString: string, finderId: number}): Promise<NoteDto[]> {
+    const findNoteWhere: FindOptionsWhere<Note>[] = [];
+
+    const notes = await this.noteRepository.find({
+      where: {
+        text: Like(`%${searchString}%`),
+        parentId: null,
+      },
+      order: {
+        creationDate: 'DESC'
+      }
+    });
+
+    return await this.convertEntitiesToDtos(notes, finderId);
+  }
+
+  async getPopularNotes({ searchString, finderId }: { searchString: string, finderId: number}): Promise<NoteDto[]> {
+    const findNoteWhere: FindOptionsWhere<Note>[] = [];
+
+    let notes: Note[] = await this.noteRepository.createQueryBuilder("a")
+      .select('a.id')
+      .where("a.text like :searchString", { searchString:`%${searchString}%` })
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(c.id)', 'count')
+          .from(LikeEntity, 'c')
+          .where('c.note.id = a.id');
+      }, 'count')
+      .orderBy('count', 'DESC')
+      .loadRelationCountAndMap('a.likeCount', 'a.likes')
+      .getMany();
+
+    if (notes) {
+      notes = await Promise.all(notes.map((note) => this.noteRepository.findOneBy({ id: note.id, parentId: null })));
+    }
+
+    // const notes = await this.noteRepository.find({
+    //   where: {
+    //     text: ILike(`%${searchString}%`)
+    //   },
+    //   relations: {
+    //     likes: true,
+    //   },
+    //   order: {
+    //     likes: CountQueuingStrategy()
+    //   }
+    // });
+
+    return await this.convertEntitiesToDtos(notes, finderId);
   }
 }

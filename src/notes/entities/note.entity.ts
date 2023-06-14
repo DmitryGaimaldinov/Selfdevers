@@ -38,6 +38,8 @@ export class Note {
   @Column({ nullable: true })
   quotedNoteId: number;
 
+  @OneToMany(() => LikeEntity, (like) => like.note)
+  likes: LikeEntity[];
 
   // @Column('text', { array: true, default: [] })
   // imageUrls: string[];

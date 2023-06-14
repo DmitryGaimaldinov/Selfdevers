@@ -84,4 +84,20 @@ export class NotesController {
       comments: await this.notesService.getComments(dto.noteId, currUser?.id)
     };
   }
+
+  @Post('get-latest-notes')
+  @UseGuards(ApplyUserGuard)
+  async getLatestNotes(@Body() { text }: { text: string }, @CurrentUser() currUser: User | null) {
+    return {
+      notes: await this.notesService.getLatestNotes({ searchString: text, finderId: currUser?.id })
+    };
+  }
+
+  @Post('get-popular-notes')
+  @UseGuards(ApplyUserGuard)
+  async getPopularNotes(@Body() { text }: { text: string }, @CurrentUser() currUser: User | null) {
+    return {
+      notes: await this.notesService.getPopularNotes({ searchString: text, finderId: currUser?.id })
+    };
+  }
 }

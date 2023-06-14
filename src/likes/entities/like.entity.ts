@@ -6,8 +6,8 @@ export class LikeEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  noteId: number;
+  @ManyToOne(() => Note, (note) => note.likes, { eager: true })
+  note: Note;
 
   @Column()
   userId: number;
